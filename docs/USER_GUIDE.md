@@ -206,6 +206,7 @@ log, service `opencode-auto-mem`):
 | `[keeper] No new messages for <id>` | Trigger fired but nothing new since the last checkpoint (normal after an immediate harvest) |
 | `[keeper] Sweeper: disabled in trigger mode 'tags'` | Startup sweep correctly gated off |
 | `[memory] Write guard rejected …` | Non-keeper session tried to write project memory |
+| `[keeper] WARN: found keeper-config.json at …\.config\…` | Config sits at `~/.config/opencode/memory` — **not read on Windows**; move it to `%APPDATA%\opencode\memory\keeper-config.json` |
 
 Memory-footprint expectations: `balanced` ≈ 700–800MB steady; the embedding
 model loads only on first `search`; `offline` never loads it. If memory grows

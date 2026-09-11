@@ -4,7 +4,7 @@ import { BootstrapManager } from "./BootstrapManager.js";
 import { MemoryManager } from "./MemoryManager.js";
 import { isHomeDirectory, getProjectNameFromDirectory, loadConfig } from "./config.js";
 import { KeeperManager } from "./keeper.js";
-import { loadKeeperConfig, configureEmbedding } from "./keeperConfig.js";
+import { findMisplacedConfigFile, getKeeperConfigPath, loadKeeperConfig, configureEmbedding } from "./keeperConfig.js";
 import { initPluginLogger, plog } from "./logger.js";
 import {
   BOOTSTRAP_INSTRUCTIONS,
@@ -33,6 +33,14 @@ const memoryPlugin = async (input: {
 
   const config = loadConfig();
   const keeperConfig = loadKeeperConfig();
+  // Windows misplacement warning (2.4.6): a config at ~/.config/opencode/
+  // memory is silently ignored — make that visible in the server log.
+  const misplacedConfig = findMisplacedConfigFile();
+  if (misplacedConfig) {
+    plog("warn",
+      `[keeper] WARN: found keeper-config.json at ${misplacedConfig} — this path is NOT read on Windows. Move it to ${getKeeperConfigPath()}.`
+    );
+  }
   const memoryManager = new MemoryManager(config, keeperConfig.indexing);
   const bootstrapManager = new BootstrapManager(memoryManager);
 

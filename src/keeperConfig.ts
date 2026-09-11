@@ -2,6 +2,7 @@
 // Loaded once at plugin start; loaded lazily on first access.
 
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 
 import { getMemoryDir } from "./config.js";
@@ -131,6 +132,28 @@ const PRESETS: Record<ModePreset, object> = {
 
 export function getKeeperConfigPath(): string {
   return path.join(getMemoryDir(), "keeper-config.json");
+}
+
+/**
+ * Windows misconfiguration detector (2.4.6): users routinely place
+ * keeper-config.json at ~/.config/opencode/memory/ — the Linux/macOS path,
+ * and the directory where OpenCode's own config AND the plugin code live —
+ * but on win32 getMemoryDir() resolves to %APPDATA%\opencode\memory, so a
+ * config at the .config path is SILENTLY IGNORED. Returns the misplaced
+ * path when the canonical file is absent but a .config copy exists
+ * (real-world incident 2026-09-11), else null.
+ */
+export function findMisplacedConfigFile(): string | null {
+  if (os.platform() !== "win32") return null;
+  if (fs.existsSync(getKeeperConfigPath())) return null;
+  const misplaced = path.join(
+    os.homedir(),
+    ".config",
+    "opencode",
+    "memory",
+    "keeper-config.json"
+  );
+  return fs.existsSync(misplaced) ? misplaced : null;
 }
 
 // --------------------------------------------------------------- validation

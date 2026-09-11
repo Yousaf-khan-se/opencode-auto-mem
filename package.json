@@ -1,6 +1,6 @@
 {
   "name": "opencode-auto-mem",
-  "version": "2.4.5",
+  "version": "2.4.6",
   "description": "Markdown-based persistent memory plugin for OpenCode — background memory-keeper agent, configurable trigger modes, project-scoped semantic search",
   "type": "module",
   "main": "dist/index.js",

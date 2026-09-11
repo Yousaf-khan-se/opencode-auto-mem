@@ -19,6 +19,9 @@ const execFileAsync = promisify(execFile);
 const TEMP_ROOT = fs.mkdtempSync(path.join(os.tmpdir(), "mem-test-"));
 process.env.APPDATA = TEMP_ROOT;
 process.env.USERPROFILE = TEMP_ROOT;
+// Linux/macOS: os.homedir() reads HOME — redirect it too so the suite is
+// platform-portable (CI runs the matrix on ubuntu-latest + windows-latest).
+process.env.HOME = TEMP_ROOT;
 
 // Windows: os.homedir() reads USERPROFILE per call (verified on Node 24).
 assert.ok(
@@ -1881,6 +1884,45 @@ const tests = [
     assert.ok(
       !fs.existsSync(indexesDir),
       "no index dir may be created while indexing.enabled=false — the embedding model must never load"
+    );
+  }],
+
+  // -------------------------------------------------------------------------
+  // (s23) findMisplacedConfigFile: stray ~/.config/opencode/memory copy is
+  // detected on Windows when the canonical file is absent (real-world
+  // incident 2026-09-11). Non-win32 → always null (path is canonical there).
+  // -------------------------------------------------------------------------
+  ["(s23) config misplacement: stray .config copy detected on win32, silent elsewhere", async () => {
+    const kc = await dist("keeperConfig.js");
+    const canonical = kc.getKeeperConfigPath();
+    const misplaced = path.join(
+      os.homedir(), ".config", "opencode", "memory", "keeper-config.json"
+    );
+    // Clean slate (harness temp dirs only — never the real home).
+    fs.rmSync(canonical, { force: true });
+    fs.rmSync(misplaced, { force: true });
+
+    if (os.platform() === "win32") {
+      fs.mkdirSync(path.dirname(misplaced), { recursive: true });
+      fs.writeFileSync(misplaced, '{"mode":"tags"}', "utf-8");
+      assert.equal(
+        kc.findMisplacedConfigFile(), misplaced,
+        "stray .config copy must be detected when the canonical file is absent"
+      );
+      // Canonical present → no warning (the stray is harmless noise then).
+      fs.mkdirSync(path.dirname(canonical), { recursive: true });
+      fs.writeFileSync(canonical, "{}", "utf-8");
+      assert.equal(
+        kc.findMisplacedConfigFile(), null,
+        "no warning when the canonical config exists"
+      );
+    }
+    // Neither file anywhere → silence (no false positive), on every platform.
+    fs.rmSync(misplaced, { force: true });
+    fs.rmSync(canonical, { force: true });
+    assert.equal(
+      kc.findMisplacedConfigFile(), null,
+      "no warning when no config exists anywhere"
     );
   }],
 ];
