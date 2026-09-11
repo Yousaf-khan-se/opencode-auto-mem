@@ -13,16 +13,37 @@ on the stable OpenCode plugin API.
 
 ## Installation
 
-Add to your OpenCode configuration at `~/.config/opencode/opencode.jsonc`:
+### From npm (recommended)
+
+Add the package name to your OpenCode configuration at
+`~/.config/opencode/opencode.jsonc`:
+
+```jsonc
+{
+  "plugin": ["opencode-auto-mem"]
+}
+```
+
+Restart OpenCode — it installs the package automatically (via Bun, cached in
+`~/.cache/opencode/node_modules/`).
+
+### From source
+
+Clone the repo, then:
+
+```bash
+npm install && npm run build
+```
+
+Copy `dist/` + `package.json` to
+`~/.config/opencode/node_modules/opencode-auto-mem/`
+(USERPROFILE `.config` tree — not `%APPDATA%`) and register the local path:
 
 ```jsonc
 {
   "plugin": ["file://C:/Users/<you>/.config/opencode/node_modules/opencode-auto-mem"]
 }
 ```
-
-Deploy the build to `~/.config/opencode/node_modules/opencode-auto-mem/`
-(USERPROFILE `.config` tree — not `%APPDATA%`) and restart OpenCode.
 
 ## Quick start — pick a mode
 
