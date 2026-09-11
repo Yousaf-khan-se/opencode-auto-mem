@@ -1,0 +1,11 @@
+{
+  "name": "@opencode-ai/plugin",
+  "version": "1.18.27",
+  "description": "Type declarations vendored from @opencode-ai/plugin so `npm run typecheck` works without installing the package (it is provided by OpenCode at runtime and is not fetchable in all environments). Verbatim copy of dist/tool.d.ts.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anomalyco/opencode"
+  },
+  "homepage": "https://www.npmjs.com/package/@opencode-ai/plugin"
+}
