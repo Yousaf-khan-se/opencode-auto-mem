@@ -78,6 +78,26 @@ hash-comparing dist\index.js before/after). ALWAYS verify a deploy with
 
 Then restart OpenCode.
 
+### CI (public repo: github.com/Yousaf-khan-se/opencode-auto-mem)
+
+`.github/workflows/ci.yml` runs typecheck + build + `npm test` on a
+windows+ubuntu matrix for every push/PR to `main`. Two hard-won invariants
+(all learned 2026-09-11, CI runs #1–#3):
+
+- **Hermetic typecheck:** `npm ci` does NOT install the optional peer
+  `@opencode-ai/plugin`, and this dev machine's npm proxy 403s npmjs metadata
+  (can't add it as a devDependency or regenerate the lockfile). Fix: the SDK's
+  `dist/tool.d.ts` is vendored at `vendor/@opencode-ai/plugin/` (MIT, verbatim)
+  and resolved via `tsconfig.paths`; `skipLibCheck` absorbs the vendored file's
+  `zod` import when zod isn't installed. If the SDK ever bumps, re-vendor.
+- **`.gitignore` `dist/` must stay root-anchored (`/dist/`)** — an unanchored
+  `dist/` silently swallows `vendor/**/dist/` type declarations.
+- **Platform-neutral fixtures:** never hardcode `C:\...` directory strings in
+  tests — `path.basename("C:\\")` is `""` on win32 but the whole string on
+  posix, which breaks spawn-count and skip-class assertions. Use
+  `path.join(TEMP_ROOT, "proj")` and `path.parse(TEMP_ROOT).root` (basename
+  `""` on every OS). The harness redirects `APPDATA` + `USERPROFILE` + `HOME`.
+
 ---
 
 ## OpenCode Plugin SDK — Critical Knowledge (READ BEFORE ANY API CHANGES)
