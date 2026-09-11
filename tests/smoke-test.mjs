@@ -244,7 +244,7 @@ const tests = [
 
   ["(f) observeSessionCreated idempotent: keeper-titled session logged once", async () => {
     const { keeper } = makeKeeper();
-    const session = { id: "ses-keep-1", directory: "C:\\t\\proj", title: "[mem-keeper] 2026-09-05" };
+    const session = { id: "ses-keep-1", directory: path.join(TEMP_ROOT, "proj"), title: "[mem-keeper] 2026-09-05" };
 
     const logs = [];
     const origLog = console.log;
@@ -283,8 +283,8 @@ const tests = [
   ["(h) sweeper is a no-op when keeper disabled (no session.create calls)", async () => {
     const { keeper, client } = makeKeeper({ enabled: false });
     const listSessions = async () => [
-      { id: "s1", directory: "C:\\t\\proj" },
-      { id: "s2", directory: "C:\\t\\other" },
+      { id: "s1", directory: path.join(TEMP_ROOT, "proj") },
+      { id: "s2", directory: path.join(TEMP_ROOT, "other") },
     ];
     await keeper.sweepUnharvested(listSessions);
     assert.equal(client.calls.create.length, 0, "disabled keeper must not create sessions");
@@ -475,7 +475,7 @@ const tests = [
     let createCount = 0;
     const client = {
       session: {
-        get: async () => ({ data: { directory: "C:\\t\\proj" } }),
+        get: async () => ({ data: { directory: path.join(TEMP_ROOT, "proj") } }),
         create: async (args) => {
           calls.create.push(args);
           createCount += 1;
@@ -496,7 +496,7 @@ const tests = [
 
     // Harvest #1: sweeper routes the unharvested main1 to onMainSessionIdle
     // (public entry point) → debounced spawn of keeper k1 over delta [m1, m2].
-    await keeper.sweepUnharvested(async () => [{ id: "main1", directory: "C:\\t\\proj" }]);
+    await keeper.sweepUnharvested(async () => [{ id: "main1", directory: path.join(TEMP_ROOT, "proj") }]);
     await sleep(60);
     assert.equal(calls.create.length, 1, `harvest #1 must spawn exactly 1 keeper (got ${calls.create.length})`);
 
@@ -548,7 +548,7 @@ const tests = [
     let createCount = 0;
     const client = {
       session: {
-        get: async () => ({ data: { directory: "C:\\t\\proj" } }),
+        get: async () => ({ data: { directory: path.join(TEMP_ROOT, "proj") } }),
         create: async (args) => {
           calls.create.push(args);
           createCount += 1;
@@ -583,16 +583,25 @@ const tests = [
       "utf-8"
     );
 
+    // Platform-neutral directory fixtures: path.join(TEMP_ROOT, "proj") has
+    // basename "proj" on every OS (the pre-seeded checkpoint lives in
+    // getProjectFolder("proj")), and a filesystem ROOT path (path.parse().root
+    // = "C:\" on win32, "/" on posix) has basename "" on every OS — the only
+    // portable way to reach skip-no-project. (Hardcoded "C:\..." strings only
+    // resolve correctly under win32 basename rules.)
+    const PROJ_DIR = path.join(TEMP_ROOT, "proj");
+    const NO_PROJ_DIR = path.parse(TEMP_ROOT).root;
+
     // One candidate per skip class + the two sessions that decide the bug:
     // old-keeper (keeper-titled → must NEVER spawn) and main9 (must spawn).
     const listSessions = async () => [
       { id: "no-dir" },                                                    // skip-no-directory
       { id: "home-dir", directory: TEMP_ROOT },                            // skip-home
-      { id: "fast-keeper", directory: "C:\\t\\proj" },                     // skip-keeper-fast
-      { id: "old-keeper", directory: "C:\\t\\proj", title: "[mem-keeper] 2026-09-05" }, // skip-keeper-title
-      { id: "no-proj", directory: "C:\\" },                                // skip-no-project
-      { id: "done-main", directory: "C:\\t\\proj" },                       // skip-already-harvested
-      { id: "main9", directory: "C:\\t\\proj" },                            // swept
+      { id: "fast-keeper", directory: PROJ_DIR },                          // skip-keeper-fast
+      { id: "old-keeper", directory: PROJ_DIR, title: "[mem-keeper] 2026-09-05" }, // skip-keeper-title
+      { id: "no-proj", directory: NO_PROJ_DIR },                           // skip-no-project
+      { id: "done-main", directory: PROJ_DIR },                            // skip-already-harvested
+      { id: "main9", directory: PROJ_DIR },                                // swept
     ];
 
     const logs = [];
